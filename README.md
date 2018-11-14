@@ -1,13 +1,12 @@
-# flask_example
+# personal website
 
-This is an app to plan a drinking route in Boston and keep track of your alcohal consumption!
-It uses Yelp API, Google Maps API and Faceook OAuth to authenticate.
+ I am not sure what this is yet. It's a working progress, will keep u posted
 
-To compile this to get it to run,
+To compile this to get it to run, 
 
 1. brew install mongod
 2. create data/db/ folder
 3. sudo mongod
 4. pip install -r requirements.txt
-5. pyhton app.py
+5. pyhton3 app.py
 6. explore the app
