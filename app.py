@@ -61,6 +61,20 @@ class LoginForm(Form):
     #email = StringField('email', validators=[DataRequired()])
     remember_me = BooleanField('remember_me', default=False)
 
+class PhotoSelection(Form):
+    one = StringField('one')
+    two = StringField('two')
+    three = StringField('three')
+    four = StringField('four')
+    six = StringField('five')
+    seven = StringField('six')
+    eight = StringField('seven')
+    five = StringField('eight')
+    nine = StringField('nine')
+    ten = StringField('ten')
+    eleven = StringField('eleven')
+
+
 class RegisterForm(Form):
     email = StringField('email', validators=[DataRequired()])
     password = StringField('password', validators=[DataRequired()])
@@ -255,7 +269,7 @@ def register_user():
 
         users.insert(new_post)
         uid = (flask_login.current_user.id)
-        return redirect(url_for('facebook_login'))#zrender_template("maptest.html", username = username)
+        return redirect(url_for('photos_view'))#zrender_template("maptest.html", username = username)
     else:
         print("couldn't find all tokens")
         return render_template('register.html',
@@ -277,29 +291,45 @@ def isemailUnique(email):
         return True
 
 
-
-
 @app.route("/photos_view")
-def facebook_login():
-    return facebook.authorize(callback=url_for('facebook_authorized',
-        next= xx.args.get('next'), _external=True))
+def photos_view():
+    form = LoginForm()
 
-@app.route("/facebook_authorized")
-@facebook.authorized_handler
-def facebook_authorized(resp):
-    next_url = xx.args.get('next') or url_for('added_marker')
-    if resp is None or 'access_token' not in resp:
-        return redirect(next_url)
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        fun_fact = form.fun_fact.data
+         # see if its in the database
 
-    session['logged_in'] = True
-    session['facebook_token'] = (resp['access_token'], '')
+        find_user = users.find_one({"email":email})
+        #usename = users.find_one({"email":email}, {'username': 1})
 
-    return redirect(next_url)
+    return render_template('photos.html')
+
+
+#@app.route("/photos_view")
+#def facebook_login():
+#    return facebook.authorize(callback=url_for('facebook_authorized',
+#        next= xx.args.get('next'), _external=True))
+
 
 
 #--------------------------------------
 #facebook authentication
 #--------------------------------------
+
+# @app.route("/facebook_authorized")
+# @facebook.authorized_handler
+# def facebook_authorized(resp):
+#     next_url = xx.args.get('next') or url_for('added_marker')
+#     if resp is None or 'access_token' not in resp:
+#         return redirect(next_url)
+
+#     session['logged_in'] = True
+#     session['facebook_token'] = (resp['access_token'], '')
+
+#     return redirect(next_url)
+
 # from flask import url_for, request, session, redirect
 # from flask_oauth import OAuth
 
