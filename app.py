@@ -34,25 +34,6 @@ app.config.update(
 
 CSRF_ENABLED = True
 
-# setting up the database
-from pymongo import MongoClient
-client = MongoClient('localhost', 27017)
-
-# initializing the databases
-db = client.saved
-yelpdb = db.yelpdb
-users = db.users
-bar_search3 = db.bar_search3
-
-client.drop_database('bar_search2')
-
-login_manager = flask_login.LoginManager()
-login_manager.init_app(app)
-
-#
-class User(flask_login.UserMixin):
-    pass
-
 #forms that are used
 class LoginForm(Form):
     email = StringField('email', validators=[DataRequired()])
@@ -60,30 +41,6 @@ class LoginForm(Form):
     fun_fact = StringField('fun fact', validators=[DataRequired()])
     #email = StringField('email', validators=[DataRequired()])
     remember_me = BooleanField('remember_me', default=False)
-
-class PhotoSelection(Form):
-    one = StringField('one')
-    two = StringField('two')
-    three = StringField('three')
-    four = StringField('four')
-    six = StringField('five')
-    seven = StringField('six')
-    eight = StringField('seven')
-    five = StringField('eight')
-    nine = StringField('nine')
-    ten = StringField('ten')
-    eleven = StringField('eleven')
-
-
-class RegisterForm(Form):
-    email = StringField('email', validators=[DataRequired()])
-    password = StringField('password', validators=[DataRequired()])
-    fun_fact = StringField('fun fact', validators=[DataRequired()])
-    #username = StringField('username', validators=[DataRequired()])
-    #email = StringField('email', validators=[DataRequired()])
-    #height = StringField('height', validators=[DataRequired()])
-    #weight = StringField('weight', validators=[DataRequired()])
-    #gender = StringField('gender')
 
 class SearchForm(Form):
     search_term = StringField('name', validators=[DataRequired()])
@@ -106,20 +63,10 @@ SEARCH_LIMIT = 5
 
 CLIENT_ID = app.config['CLIENT_ID']
 CLIENT_SECRET = app.config['CLIENT_SECRET']
-GOOGLEMAPS_KEY = app.config['GOOGLEMAPS_KEY'] 
-FACEBOOK_APP_ID = app.config['FACEBOOK_APP_ID']
-FACEBOOK_APP_SECRET = app.config['FACEBOOK_APP_SECRET']
+# GOOGLEMAPS_KEY = app.config['GOOGLEMAPS_KEY'] 
+# FACEBOOK_APP_ID = app.config['FACEBOOK_APP_ID']
+# FACEBOOK_APP_SECRET = app.config['FACEBOOK_APP_SECRET']
 
-
-@login_manager.user_loader
-def load_user(email):
-    find_user = users.find_one({"email":email})
-    if not find_user:
-        return
-    user = User()
-    user.id = email
-
-    return user
 
 #
 @app.route('/')
@@ -128,8 +75,6 @@ def load_user(email):
 def index():
     return render_template('homepage.html',
                             title='Home')
-
-
 
 #--------------------------------------
 #error handling
@@ -145,140 +90,69 @@ def internal_error(error):
     return render_template('500.html'), 500
 
 
+# @login_manager.unauthorized_handler
+# def unauthorized_handler():
+#     return render_template('unauth.html')
+
+
 #--------------------------------------
 #views
 #-------------------------------------
 
-@app.route('/logout')
-@flask_login.login_required
-def logout():
-#    #uid = (flask_login.current_user.id)
-    flask_login.logout_user()
-    return render_template('homepage.html')
-#
+# @app.route('/logout')
+# @flask_login.login_required
+# def logout():
+# #    #uid = (flask_login.current_user.id)
+#     flask_login.logout_user()
+#     return render_template('homepage.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-
-    if form.validate_on_submit():
-        email = form.email.data
-        password = form.password.data
-        fun_fact = form.fun_fact.data
-         # see if its in the database
-
-        find_user = users.find_one({"email":email})
-        #usename = users.find_one({"email":email}, {'username': 1})
-
-        if(find_user):
-            # now check if its the right password
-            pwd = users.find_one({"email":email}, {'password': 1})
-
-            if (password == pwd['password']):
-                user = User()
-                user.id = email
-                print(flask_login.login_user(user))#, remember =True)
-                flask_login.login_user(user)
-                
-                print("user already registed in the database" )
-
-                return redirect(url_for('photos_view'))
-            else:
-                return 'Bad Login'
-
-        else:
-            print("user name not in the database yet")
-            return "<a href='/login'>Try again</a>\
-                    </br><a href='/register'>or make an account</a>"
-
-    return render_template('login.html',
-                           title='Sign In',
-                           form=form)
-
-
-@app.route('/search', methods=['GET','POST'])
-@flask_login.login_required
-def search():
-     form = SearchForm()
-     # in the database
-     uid = (flask_login.current_user.id)
-     if form.validate_on_submit():
+# @app.route('/search', methods=['GET','POST'])
+# @flask_login.login_required
+# def search():
+#      form = SearchForm()
+#      # in the database
+#      uid = (flask_login.current_user.id)
+#      if form.validate_on_submit():
         
-        search_term = form.search_term.data
-        location = form.location.data
+#         search_term = form.search_term.data
+#         location = form.location.data
         
-        test1 = yelpdb.find_one({"search":search_term})
-        test2 = yelpdb.find_one({"location":location})
-        if(test1 and test2):
-            ("already in the database")
-            print(test1)
-            return render_template('index.html',
-                            search_term = search_term,
-                            results = test2)
+#         test1 = yelpdb.find_one({"search":search_term})
+#         test2 = yelpdb.find_one({"location":location})
+#         if(test1 and test2):
+#             ("already in the database")
+#             print(test1)
+#             return render_template('index.html',
+#                             search_term = search_term,
+#                             results = test2)
             
-        else:
-            print("not in the database yet")
-            results = query_api(search_term, location)#query_api(search_term, location)
-            new_post = {"search": search_term,
-                            "location": location,
-                            "rest1":results[1],
-                            "rest2": results[2],
-                            "rest3": results[3],
-                            "rest4": results[4]}
-            yelpdb.insert(new_post)
-            test4 = yelpdb.find_one({"location":location})
+#         else:
+#             print("not in the database yet")
+#             results = query_api(search_term, location)#query_api(search_term, location)
+#             new_post = {"search": search_term,
+#                             "location": location,
+#                             "rest1":results[1],
+#                             "rest2": results[2],
+#                             "rest3": results[3],
+#                             "rest4": results[4]}
+#             yelpdb.insert(new_post)
+#             test4 = yelpdb.find_one({"location":location})
             
-            if(test4):
-                return render_template('index.html',
-                        search_term = search_term,
-                        results = test4)
+#             if(test4):
+#                 return render_template('index.html',
+#                         search_term = search_term,
+#                         results = test4)
 
-     return render_template('search.html',
-                            title='Search',
-                            form = form)
+#      return render_template('search.html',
+#                             title='Search',
+#                             form = form)
 #
-def getuseridfromemail(email):
-    uid = users.find_one({"email":'bob.test.com'}, {'username':1})
-    return uid
-    #cursor.execute("SELECT user_id  FROM Users WHERE email = '{0}'".format(email))
-    #return cursor.fetchone()[0]
+# def getuseridfromemail(email):
+#     uid = users.find_one({"email":'bob.test.com'}, {'username':1})
+#     return uid
+#     #cursor.execute("SELECT user_id  FROM Users WHERE email = '{0}'".format(email))
+#     #return cursor.fetchone()[0]
 
-@login_manager.unauthorized_handler
-def unauthorized_handler():
-    return render_template('unauth.html')
-
-@app.route("/register", methods=['GET','POST'])
-def register_user():
-    form = RegisterForm()
-    password = form.password.data
-    email = form.email.data
-    fun_fact =  form.fun_fact.data
-   
-
-    test =  isemailUnique(email)
-
-    if test:
-        new_post = {
-            "password":password,
-            "email": email,
-            "fun_fact": fun_fact
-        }
-        user = User()
-        user.id = email
-        flask_login.login_user(user, remember = True)
-
-        users.insert(new_post)
-        uid = (flask_login.current_user.id)
-        return redirect(url_for('photos_view'))#zrender_template("maptest.html", username = username)
-    else:
-        print("couldn't find all tokens")
-        return render_template('register.html',
-                                title='Register',
-                                form = form)
-
-    return render_template('register.html',
-                            title='Register',
-                            form = form)
 
 def isemailUnique(email):
 
@@ -293,327 +167,146 @@ def isemailUnique(email):
 
 @app.route("/photos_view")
 def photos_view():
-    form = LoginForm()
-
-    if form.validate_on_submit():
-        email = form.email.data
-        password = form.password.data
-        fun_fact = form.fun_fact.data
-         # see if its in the database
-
-        find_user = users.find_one({"email":email})
-        #usename = users.find_one({"email":email}, {'username': 1})
 
     return render_template('photos.html')
 
-
-#@app.route("/photos_view")
-#def facebook_login():
-#    return facebook.authorize(callback=url_for('facebook_authorized',
-#        next= xx.args.get('next'), _external=True))
-
-
-
-#--------------------------------------
-#facebook authentication
-#--------------------------------------
-
-# @app.route("/facebook_authorized")
-# @facebook.authorized_handler
-# def facebook_authorized(resp):
-#     next_url = xx.args.get('next') or url_for('added_marker')
-#     if resp is None or 'access_token' not in resp:
-#         return redirect(next_url)
-
-#     session['logged_in'] = True
-#     session['facebook_token'] = (resp['access_token'], '')
-
-#     return redirect(next_url)
-
-# from flask import url_for, request, session, redirect
-# from flask_oauth import OAuth
-
-
-# oauth = OAuth()
-
-# facebook = oauth.remote_app('facebook',
-#     base_url='https://graph.facebook.com/',
-#     request_token_url=None,
-#     access_token_url='/oauth/access_token',
-#     authorize_url='https://www.facebook.com/dialog/oauth',
-#     consumer_key=FACEBOOK_APP_ID,
-#     consumer_secret=FACEBOOK_APP_SECRET,
-#     request_token_params={'scope': ('email, ')}
-# )
-
-# @facebook.tokengetter
-# def get_facebook_token():
-#     return session.get('facebook_token')
-
-# def pop_login_session():
-#     session.pop('logged_in', None)
-#     session.pop('facebook_token', None)
-    
-# #https://www.facebook.com/dialog/oauth?scope=email%2C+&redirect_uri=http%3A%2F%2F0.0.0.0%3A5000%2Ffacebook_authorized&client_id=426344891059039
-
-# @app.route("/facebook_login")
-# def facebook_login():
-#     return facebook.authorize(callback=url_for('facebook_authorized',
-#         next= xx.args.get('next'), _external=True))
-
-# @app.route("/facebook_authorized")
-# @facebook.authorized_handler
-# def facebook_authorized(resp):
-#     next_url = xx.args.get('next') or url_for('added_marker')
-#     if resp is None or 'access_token' not in resp:
-#         return redirect(next_url)
-
-#     session['logged_in'] = True
-#     session['facebook_token'] = (resp['access_token'], '')
-
-#     return redirect(next_url)
-# #
-# #@app.route("/fb_logout")
-# #def logout():
-# #    pop_login_session()
-# #    return redirect(url_for('homepage'))
-
-
-# ##Querying information from facebook
-# def get_facebook_name():
-# 	data = facebook.get('/me').data
-# 	print(data)
-# 	if 'id' in data and 'name' in data:
-# 		user_id = data['id']
-# 		user_name = data['name']
-# 		return user_name
-
-# def get_facebook_friend_appuser():
-# 	data = facebook.get('/me?fields=friends{first_name,last_name}').data
-# 	print(data)
-# 	return data
-
-# def get_facebook_profile_url():
-    
-#     data = facebook.get('/me?fields=picture{url}').data
-#     if 'picture' in data:
-#         print(data['picture'])
-#         json_str = json.dumps(data['picture'])
-#         resp = json.loads(json_str)
-#         print("json object")
-#         user_picture_url = data['picture']
-#         return data['picture']['data']['url']
 
 
 #--------------------------------------
 #yelp authentication
 #--------------------------------------
 
-import sys
+# import sys
 
-def obtain_bearer_token(host, path):
-    """Given a bearer token, send a GET request to the API.
-    """
-    url = '{0}{1}'.format(host, urllib.parse.quote(path.encode('utf8')))
-    #assert CLIENT_ID, "Please supply your client_id."
-    #assert CLIENT_SECRET, "Please supply your client_secret."
-    data = urllib.parse.urlencode({
-        'client_id': CLIENT_ID,
-        'client_secret': CLIENT_SECRET,
-        'grant_type': GRANT_TYPE,
-    })
-    headers = {
-        'content-type': 'application/x-www-form-urlencoded',
-    }
-    response = yy.request('POST', url, data=data, headers=headers)
-    bearer_token = response.json()['access_token']
-    return bearer_token
-#
-def request(host, path, bearer_token, url_params=None):
+# def obtain_bearer_token(host, path):
+#     """Given a bearer token, send a GET request to the API.
+#     """
+#     url = '{0}{1}'.format(host, urllib.parse.quote(path.encode('utf8')))
+#     #assert CLIENT_ID, "Please supply your client_id."
+#     #assert CLIENT_SECRET, "Please supply your client_secret."
+#     data = urllib.parse.urlencode({
+#         'client_id': CLIENT_ID,
+#         'client_secret': CLIENT_SECRET,
+#         'grant_type': GRANT_TYPE,
+#     })
+#     headers = {
+#         'content-type': 'application/x-www-form-urlencoded',
+#     }
+#     response = yy.request('POST', url, data=data, headers=headers)
+#     bearer_token = response.json()['access_token']
+#     return bearer_token
+# #
+# def request(host, path, bearer_token, url_params=None):
 
-    url_params = url_params or {}
-    url = '{0}{1}'.format(host, urllib.parse.quote(path.encode('utf8')))
-    headers = {
-        'Authorization': 'Bearer %s' % bearer_token,
-    }
+#     url_params = url_params or {}
+#     url = '{0}{1}'.format(host, urllib.parse.quote(path.encode('utf8')))
+#     headers = {
+#         'Authorization': 'Bearer %s' % bearer_token,
+#     }
 
-    print(u'Querying {0} ...'.format(url))
+#     print(u'Querying {0} ...'.format(url))
 
-    response = yy.request('GET', url, headers=headers, params=url_params)
+#     response = yy.request('GET', url, headers=headers, params=url_params)
 
-    return response.json()
+#     return response.json()
 
-def search(bearer_token, term, location):
+# def search(bearer_token, term, location):
 
-    url_params = {
-        'term': term.replace(' ', '+'),
-        'location': location.replace(' ', '+'),
-        'limit': SEARCH_LIMIT
-    }
-    return request(API_HOST, SEARCH_PATH, bearer_token, url_params=url_params)
+#     url_params = {
+#         'term': term.replace(' ', '+'),
+#         'location': location.replace(' ', '+'),
+#         'limit': SEARCH_LIMIT
+#     }
+#     return request(API_HOST, SEARCH_PATH, bearer_token, url_params=url_params)
 
-def get_business(bearer_token, business_id):
+# def get_business(bearer_token, business_id):
 
-    """Query the Business API by a business ID.
-    Args:
-        business_id (str): The ID of the business to query.
-    Returns:
-        dict: The JSON response from the request.
-    """
-    business_path = BUSINESS_PATH + business_id
-    return request(API_HOST, business_path, bearer_token)
-#
-def query_api(term, location):
+#     """Query the Business API by a business ID.
+#     Args:
+#         business_id (str): The ID of the business to query.
+#     Returns:
+#         dict: The JSON response from the request.
+#     """
+#     business_path = BUSINESS_PATH + business_id
+#     return request(API_HOST, business_path, bearer_token)
+# #
+# def query_api(term, location):
 
-    bearer_token = obtain_bearer_token(API_HOST, TOKEN_PATH)
-    response = search(bearer_token, term, location)
-    businesses = response.get('businesses')
+#     bearer_token = obtain_bearer_token(API_HOST, TOKEN_PATH)
+#     response = search(bearer_token, term, location)
+#     businesses = response.get('businesses')
 
-    if not businesses:
-        x = (u'No businesses for {0} in {1} found.'.format(term, location))
-        return x
+#     if not businesses:
+#         x = (u'No businesses for {0} in {1} found.'.format(term, location))
+#         return x
 
-    business_id = businesses[0]['id']
-    array_ret = [None]*SEARCH_LIMIT
+#     business_id = businesses[0]['id']
+#     array_ret = [None]*SEARCH_LIMIT
 
-    for i in range(SEARCH_LIMIT):
+#     for i in range(SEARCH_LIMIT):
 
-        business_id = businesses[i]['id']
-        business_name = businesses[i]['name']
-        business_pic = businesses[i]['image_url']
-        business_price = businesses[i]['price']
-        business_rating = businesses[i]['rating']
+#         business_id = businesses[i]['id']
+#         business_name = businesses[i]['name']
+#         business_pic = businesses[i]['image_url']
+#         business_price = businesses[i]['price']
+#         business_rating = businesses[i]['rating']
 
-        array_ret[i] = (business_id,business_name,business_pic,business_price,str(business_rating))
+#         array_ret[i] = (business_id,business_name,business_pic,business_price,str(business_rating))
 
-    print(u'{0} businesses found, querying business info ' \
-        'for the top result "{1}" ...'.format(
-            len(businesses), business_id))
-    response = get_business(bearer_token, business_id)
+#     print(u'{0} businesses found, querying business info ' \
+#         'for the top result "{1}" ...'.format(
+#             len(businesses), business_id))
+#     response = get_business(bearer_token, business_id)
 
-    print(u'Result for business "{0}" found:'.format(business_id))
-    #pprint.pprint(response, indent=2)
-    return(array_ret)
+#     print(u'Result for business "{0}" found:'.format(business_id))
+#     #pprint.pprint(response, indent=2)
+#     return(array_ret)
 
-def search2(bearer_token, term, location):
+# def search2(bearer_token, term, location):
 
-    url_params = {
-        'term': term.replace(' ', '+'),
-        'location': location.replace(' ', '+'),
-        'limit': 20
-    }
-    return request(API_HOST, SEARCH_PATH, bearer_token, url_params=url_params)
+#     url_params = {
+#         'term': term.replace(' ', '+'),
+#         'location': location.replace(' ', '+'),
+#         'limit': 20
+#     }
+#     return request(API_HOST, SEARCH_PATH, bearer_token, url_params=url_params)
 
-zips = [
-    "West Roxbury","Jamaica Plain","South Boston","South End","Mission Hill","Fenway",
-    "Back Bay","Downtown","Charlestown", "Brighton", "Allston", "Cambridge","Harvard Square","Somerville","Davis Square" 
-]
-def query_api_2():
+# zips = [
+#     "West Roxbury","Jamaica Plain","South Boston","South End","Mission Hill","Fenway",
+#     "Back Bay","Downtown","Charlestown", "Brighton", "Allston", "Cambridge","Harvard Square","Somerville","Davis Square" 
+# ]
+# def query_api_2():
 
-    bearer_token = obtain_bearer_token(API_HOST, TOKEN_PATH)
-    response = search2(bearer_token, "bars", "Davis Square")
-    businesses = response.get('businesses')
+#     bearer_token = obtain_bearer_token(API_HOST, TOKEN_PATH)
+#     response = search2(bearer_token, "bars", "Davis Square")
+#     businesses = response.get('businesses')
 
-    if not businesses:
-        x = (u'No businesses for {0} in {1} found.'.format(term, location))
-        return x
+#     if not businesses:
+#         x = (u'No businesses for {0} in {1} found.'.format(term, location))
+#         return x
 
-    business_id = businesses[0]['id']
-    array_ret = [None]*20
+#     business_id = businesses[0]['id']
+#     array_ret = [None]*20
 
-    for i in range(20):
+#     for i in range(20):
 
-        business_url = businesses[i]['url']
-        business_name = businesses[i]['name']
-        business_long = businesses[i]['coordinates']['longitude']
-        business_lat = businesses[i]['coordinates']['latitude']
+#         business_url = businesses[i]['url']
+#         business_name = businesses[i]['name']
+#         business_long = businesses[i]['coordinates']['longitude']
+#         business_lat = businesses[i]['coordinates']['latitude']
 
-        array_ret[i] = (business_url,business_name,business_long,business_lat)
+#         array_ret[i] = (business_url,business_name,business_long,business_lat)
 
-    print(u'{0} businesses found, querying business info ' \
-        'for the top result "{1}" ...'.format(
-            len(businesses), business_id))
-    response = get_business(bearer_token, business_id)
+#     print(u'{0} businesses found, querying business info ' \
+#         'for the top result "{1}" ...'.format(
+#             len(businesses), business_id))
+#     response = get_business(bearer_token, business_id)
 
-    print(u'Result for business "{0}" found:'.format(business_id))
-    #pprint.pprint(response, indent=2)
-    return(array_ret)
-
-
-##--------------------------------------
-##google maps authentication
-##--------------------------------------
-#
-
-GoogleMaps(app)
-##google map testing
-@app.route("/mapview")
-@flask_login.login_required
-def mapview():
-    uid = (flask_login.current_user.id)
-    height = users.find_one({"email":uid}, {'height': 1})
-    weight = users.find_one({"email":uid}, {'weight': 1})
-    
-    print("logged in as" +uid)
-    return render_template('maptest.html', 
-                           username = uid, 
-                           user_picture_url = get_facebook_profile_url(),
-                           height = height,
-                           weight = weight)
-##
+#     print(u'Result for business "{0}" found:'.format(business_id))
+#     #pprint.pprint(response, indent=2)
+#     return(array_ret)
 
 
-@app.route("/added_marker", methods = ['GET', 'POST'])
-@flask_login.login_required
-def added_marker():
-    form = bar_searchForm()
-    
-    if form.validate_on_submit():
-        #message = form.message.data
-        area = form.area.data
-        drunk_level = form.drunk_level.data
-        uid = flask_login.current_user.id
-        height = users.find_one({"email":uid}, {'height': 1})
-        weight = users.find_one({"email":uid}, {'weight': 1})
-        gender = users.find_one({"email":uid}, {'gender': 1})
-        
-        
-        #print(height["height"])
-        print("logged in as" +uid)
-#        zip_ = [v for (k,v) in zips.items() if k == area]
-#        zipcode = zip_[0]
-#        print(zipcode)
-        
-## so this is me manually getting the database going for this
-#        results = query_api_2()
-#        for i in range(len(results)):
-#            new_post = {"location": area + str(i),
-#                            "about":results[i]}
-#            bar_search3.insert(new_post)
-
-        markers = [None]*15
-        for i in range(15):
-            x = area + str(i)
-            test1 = bar_search3.find_one({"location":x})
-            #url = (test1["about"][0])
-            name = str(test1["about"][1])
-            lat = (test1["about"][2])
-            long = (test1["about"][3])
-            new = [lat, long, name]
-            markers[i] = new
-            #print(test1)
-       
-        # trying to get this map to work
-#        
-        return render_template(('maptest2.html'), user_picture_url = get_facebook_profile_url(),username = uid ,height = height, weight = weight, gender = gender, drunk_level = drunk_level, Marker = markers)
-    
-    return render_template('getting_location.html',
-                            title='Getting Location',
-                            form = form)
-@app.route("/map_unsafe")
-def map_unsafe():
-    
-    return render_template('maptest.html')
 
 if __name__ == '__main__':
 
